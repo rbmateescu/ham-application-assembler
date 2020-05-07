@@ -369,7 +369,7 @@ func TestApplicationAssembler(t *testing.T) {
 	g.Expect(c.Get(context.TODO(), applicationKey, appasm)).NotTo(HaveOccurred())
 
 	// validate the appasm components
-	g.Expect(appasm.Spec.Components).To(HaveLen(2))
+	g.Expect(appasm.Spec.HubComponents).To(HaveLen(2))
 
 	components := []*corev1.ObjectReference{
 		{
@@ -385,8 +385,7 @@ func TestApplicationAssembler(t *testing.T) {
 			APIVersion: toolsv1alpha1.DeployableGVK.Group + "/" + toolsv1alpha1.DeployableGVK.Version,
 		},
 	}
-
-	for _, comp := range appasm.Spec.Components {
+	for _, comp := range appasm.Spec.HubComponents {
 		g.Expect(comp).To(BeElementOf(components))
 	}
 

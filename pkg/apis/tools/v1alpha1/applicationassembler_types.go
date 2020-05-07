@@ -18,11 +18,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
+	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 )
 
 var (
 	// AnnotationDiscover defines the annotation used to indicate whether an application should be marked for discovery
-	AnnotationDiscover = SchemeGroupVersion.Group + "/hybrid-discover"
+	AnnotationDiscover = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discovered"
+
+	//AnnotationClusterScope indicates whether discovery should look for resources cluster wide rather then in a specific namespace
+	AnnotationClusterScope = hdplv1alpha1.SchemeGroupVersion.Group + "/hybrid-discover-clusterscoped"
 
 	// AnnotationCreateAssembler defines the annotation used to indicate whether the discovery process should also create an application assembler CR.
 	AnnotationCreateAssembler = SchemeGroupVersion.Group + "/hybrid-discover-create-assembler"
@@ -30,19 +36,16 @@ var (
 	// LabelApplicationPrefix defines the label prefix used as component selector
 	LabelApplicationPrefix = SchemeGroupVersion.Group + "/application-"
 
-	//AnnotationClusterScope indicates whether discovery should look for resources cluster wide rather then in a specific namespace
-	AnnotationClusterScope = SchemeGroupVersion.Group + "/hybrid-discover-clusterscoped"
-
 	//HybridDeployableGK represents the GroupVersionKind structure for a hybrid deployable
 	HybridDeployableGK = metav1.GroupKind{
-		Group: "app.cp4mcm.ibm.com",
-		Kind:  "HybridDeployable",
+		Group: hdplv1alpha1.SchemeGroupVersion.Group,
+		Kind:  "Deployable",
 	}
 
 	//DeployableGVK represents the GroupVersionKind structure for a deployable
 	DeployableGVK = schema.GroupVersionKind{
-		Group:   "apps.open-cluster-management.io",
-		Version: "v1",
+		Group:   dplv1.SchemeGroupVersion.Group,
+		Version: dplv1.SchemeGroupVersion.Version,
 		Kind:    "Deployable",
 	}
 )
@@ -54,18 +57,26 @@ const (
 	DefaultDeployerType = "kubernetes"
 
 	// DiscoveryEnabled indicates whether the discovery is enabled for an application CR
-	DiscoveryEnabled = "enabled"
+	DiscoveryEnabled = "true"
 
 	//AssemblerCreationCompleted indicates the process of creating the assembler CR has finished successfully
 	AssemblerCreationCompleted = "completed"
 )
 
+// ClusterComponent defines a list of components for a managed cluster identified by its namespace
+type ClusterComponent struct {
+	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
+	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	Cluster    string                    `json:"cluster"`
+	Components []*corev1.ObjectReference `json:"components,omitempty"`
+}
+
 // ApplicationAssemblerSpec defines the desired state of ApplicationAssembler
 type ApplicationAssemblerSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Application corev1.ObjectReference    `json:"applicationObject"`
-	Components  []*corev1.ObjectReference `json:"components,omitempty"`
+	HubComponents             []*corev1.ObjectReference `json:"hubComponents,omitempty"`
+	ManagedClustersComponents []*ClusterComponent       `json:"managedClustersComponents,omitempty"`
 }
 
 // ApplicationAssemblerPhase defines the application assembler phase

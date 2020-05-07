@@ -16,6 +16,7 @@ package applicationassembler
 
 import (
 	"context"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -48,7 +49,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	var key types.NamespacedName
-	key.Name = r.genHybridDeployableName(instance, ucobj)
+	key.Name = r.genHybridDeployableName(instance, objref)
 	key.Namespace = instance.Namespace
 	hdpl := &hdplv1alpha1.Deployable{}
 
@@ -107,7 +108,51 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	return err
 }
 
-// Assuming only 1 deployer in 1 namespace
+func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInManagedCluster(instance *toolsv1alpha1.ApplicationAssembler,
+	obj *corev1.ObjectReference, appID string, cluster types.NamespacedName) error {
+
+	hdplKey := types.NamespacedName{
+		Name:      r.genHybridDeployableName(instance, obj),
+		Namespace: instance.Namespace,
+	}
+	hdpl := &hdplv1alpha1.Deployable{}
+
+	err := r.Get(context.TODO(), hdplKey, hdpl)
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			klog.Error("Failed to retrieve hybrid deployable ", hdplKey.String())
+			return err
+		}
+		hdpl.Name = hdplKey.Name
+		hdpl.Namespace = hdplKey.Namespace
+
+		dpl := &dplv1.Deployable{}
+		dpl.GenerateName = strings.ToLower(obj.Kind + "-" + obj.Namespace + "-" + obj.Name + "-")
+		dpl.Namespace = cluster.Namespace
+		annotations := make(map[string]string)
+		annotations[toolsv1alpha1.AnnotationDiscover] = toolsv1alpha1.DiscoveryEnabled
+		dpl.Annotations = annotations
+
+		tpl := &unstructured.Unstructured{}
+		tpl.SetAPIVersion(obj.APIVersion)
+		tpl.SetKind(obj.Kind)
+		tpl.SetName(obj.Name)
+		tpl.SetNamespace(obj.Namespace)
+		dpl.Spec.Template = &runtime.RawExtension{
+			Object: tpl,
+		}
+		r.updateObject(hdpl, dpl)
+		err := r.Client.Create(context.TODO(), dpl)
+		if err != nil {
+			klog.Error("Failed to create deployable ", cluster.Namespace+"/"+obj.Name)
+			return err
+		}
+
+		return r.buildHybridDeployable(hdpl, dpl, appID)
+	}
+	return nil
+}
+
 func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *unstructured.Unstructured) (*hdplv1alpha1.HybridTemplate,
 	*hdplv1alpha1.Deployer, error) {
 	var err error
@@ -177,13 +222,11 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 var (
 	obsoleteAnnotations = []string{
 		"kubectl.kubernetes.io/last-applied-configuration",
-		hdplv1alpha1.HostingHybridDeployable,
 		dplv1.AnnotationHosting,
 		subv1.AnnotationHosting,
 		subv1.AnnotationSyncSource,
 	}
 	obsoleteLabels = []string{
-		hdplv1alpha1.HostingHybridDeployable,
 		hdplv1alpha1.ControlledBy,
 	}
 )
