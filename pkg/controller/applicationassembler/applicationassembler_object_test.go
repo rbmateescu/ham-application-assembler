@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
+	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
 
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
@@ -493,5 +494,49 @@ func TestHubComponentsPlacementByDefaultDeployer(t *testing.T) {
 	g.Expect(stsHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(toolsv1alpha1.DefaultDeployerType))
 
 	defer c.Delete(context.TODO(), stsHdpl)
+
+}
+
+func TestComponentsNameLength(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	newLongName := utils.TruncateString("very-long-name-exceeding-maximum-length-allowed-for-kubernetes-label-values", toolsv1alpha1.GeneratedDeployableNameLength)
+	svc := service.DeepCopy()
+	svc.Name = newLongName
+	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), svc)
+
+	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
+	instance1 := applicationAssembler1.DeepCopy()
+	instance1.Spec.HubComponents[0].Name = newLongName
+	g.Expect(c.Create(context.TODO(), instance1)).NotTo(HaveOccurred())
+	defer c.Delete(context.TODO(), instance1)
+	g.Eventually(requests, timeout).Should(Receive())
+
+	hdplName := utils.TruncateString("service-"+service.Namespace+"-"+newLongName, toolsv1alpha1.GeneratedDeployableNameLength)
+	hybrddplyblKey := types.NamespacedName{Name: hdplName, Namespace: applicationAssemblerKey.Namespace}
+	hybrddplybl := &hdplv1alpha1.Deployable{}
+	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
+	g.Expect(hybrddplybl.Name).To(HaveLen(toolsv1alpha1.GeneratedDeployableNameLength))
+	defer c.Delete(context.TODO(), hybrddplybl)
 
 }
