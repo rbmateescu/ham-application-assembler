@@ -56,6 +56,12 @@ var (
 		Namespace: "foo-cluster",
 	}
 
+	fooNS = corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "foo-cluster",
+		},
+	}
+
 	deployable = &dplv1.Deployable{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deployableKey.Name,
@@ -123,6 +129,9 @@ func TestReconcile(t *testing.T) {
 		close(stopMgr)
 		mgrStopped.Wait()
 	}()
+
+	ns := fooNS.DeepCopy()
+	g.Expect(c.Create(context.TODO(), ns)).To(Succeed())
 
 	// create the deployable object
 	dpl := deployable.DeepCopy()
