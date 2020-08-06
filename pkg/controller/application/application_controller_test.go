@@ -47,7 +47,18 @@ var (
 	}
 
 	mc1Name = "mc1"
+	mc1NS   = corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: mc1Name,
+		},
+	}
+
 	mc2Name = "mc2"
+	mc2NS   = corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: mc2Name,
+		},
+	}
 
 	mc1ServiceName = "mysql-svc-mc1"
 	mc2ServiceName = "webserver-svc-mc2"
@@ -189,6 +200,12 @@ func TestReconcile(t *testing.T) {
 		close(stopMgr)
 		mgrStopped.Wait()
 	}()
+
+	ns1 := mc1NS.DeepCopy()
+	g.Expect(c.Create(context.TODO(), ns1)).To(Succeed())
+
+	ns2 := mc2NS.DeepCopy()
+	g.Expect(c.Create(context.TODO(), ns2)).To(Succeed())
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	app := application.DeepCopy()

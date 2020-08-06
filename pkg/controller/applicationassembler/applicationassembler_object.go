@@ -52,7 +52,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 		}, objref.Name)
 	}
 
-	ucobj, err := r.dynamicClient.Resource(objgvr).Namespace(objref.Namespace).Get(objref.Name, metav1.GetOptions{})
+	ucobj, err := r.dynamicClient.Resource(objgvr).Namespace(objref.Namespace).Get(context.TODO(), objref.Name, metav1.GetOptions{})
 	if err != nil {
 		klog.Error("Failed to obtain component with error:", err, "object reference:", objref)
 		return err
