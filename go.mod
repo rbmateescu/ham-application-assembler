@@ -9,7 +9,7 @@ require (
 	github.com/onsi/gomega v1.9.0
 	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200603180154-d1d17d718c30
 	github.com/open-cluster-management/multicloud-operators-placementrule v1.0.1-2020-05-28-18-29-00.0.20200603172904-efde26079087
-	github.com/open-cluster-management/multicloud-operators-subscription v0.0.0-20200427133526-eb3986b41290
+	github.com/open-cluster-management/multicloud-operators-subscription v1.0.0
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/prometheus/common v0.9.1
 	github.com/spf13/pflag v1.0.5
