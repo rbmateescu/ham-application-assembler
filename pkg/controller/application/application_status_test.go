@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
+	"k8s.io/klog"
 
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -57,16 +58,31 @@ func TestDiscoveredComponents(t *testing.T) {
 	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
 	dpl1 := mc1ServiceDeployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dpl1)
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	dpl2 := mc2ServiceDeployable.DeepCopy()
 	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
-	defer c.Delete(context.Background(), dpl2)
+	defer func() {
+		if err = c.Delete(context.Background(), dpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the Application object and expect the deployables
 	app := application.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), app)
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 

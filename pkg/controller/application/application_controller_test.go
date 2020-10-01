@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -210,7 +211,12 @@ func TestReconcile(t *testing.T) {
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	app := application.DeepCopy()
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), app)
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 }
 
@@ -244,32 +250,62 @@ func Test_ApplicationAssemblerComponents_In_MultipleManagedCluster(t *testing.T)
 
 	cl1 := mc1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), cl1)
+	defer func() {
+		if err = c.Delete(context.TODO(), cl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	cl2 := mc2.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cl2)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), cl2)
+	defer func() {
+		if err = c.Delete(context.TODO(), cl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	dpl1 := mc1ServiceDeployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dpl1)
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	dpl2 := mc2ServiceDeployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dpl2)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dpl2)
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the Application object and expect the hybrid deployables in its status
 	app := application.DeepCopy()
 	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.HybridDiscoveryCreateAssembler
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), app)
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// wait for reconcile to finish
 	g.Eventually(appRequests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	appasm := &toolsv1alpha1.ApplicationAssembler{}
 	g.Expect(c.Get(context.TODO(), applicationKey, appasm)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), appasm)
+	defer func() {
+		if err = c.Delete(context.TODO(), appasm); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// validate the appasm components , 2 cluster components
 	g.Expect(appasm.Spec.ManagedClustersComponents).To(HaveLen(2))
@@ -327,29 +363,54 @@ func Test_ApplicationAssemblerComponents_In_SingleManagedCluster(t *testing.T) {
 
 	cl1 := mc1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), cl1)
+	defer func() {
+		if err = c.Delete(context.TODO(), cl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	dpl1 := mc1ServiceDeployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dpl1)
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	dpl2 := mc2ServiceDeployable.DeepCopy()
 	dpl2.Namespace = mc1Name
 	g.Expect(c.Create(context.TODO(), dpl2)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dpl2)
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the Application object and expect the hybrid deployables in its status
 	app := application.DeepCopy()
 	app.Annotations[toolsv1alpha1.AnnotationCreateAssembler] = toolsv1alpha1.HybridDiscoveryCreateAssembler
 	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), app)
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// wait for reconcile to finish
 	g.Eventually(appRequests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	appasm := &toolsv1alpha1.ApplicationAssembler{}
 	g.Expect(c.Get(context.TODO(), applicationKey, appasm)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), appasm)
+	defer func() {
+		if err = c.Delete(context.TODO(), appasm); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// validate the appasm components , 1 cluster components
 	g.Expect(appasm.Spec.ManagedClustersComponents).To(HaveLen(1))
