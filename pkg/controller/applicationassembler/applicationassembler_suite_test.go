@@ -24,6 +24,7 @@ import (
 	"github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -51,8 +52,10 @@ func TestMain(m *testing.M) {
 	}
 
 	code := m.Run()
+	if err = t.Stop(); err != nil {
+		klog.Error(err)
+	}
 
-	t.Stop()
 	os.Exit(code)
 }
 

@@ -3,11 +3,12 @@ module github.com/hybridapp-io/ham-application-assembler
 go 1.13
 
 require (
-	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20200727143100-0d48481b58fb
+	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20201001171709-09fe74f37526
+	github.com/hybridapp-io/ham-placement v0.0.0-20200930154109-0cc75e4d1c3e
 	github.com/kubernetes-sigs/application v0.8.1
 	github.com/onsi/gomega v1.9.0
-	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200409001040-158722845851
-	github.com/open-cluster-management/multicloud-operators-placementrule v0.0.0-20200409002246-5a52c406aebc
+	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200603180154-d1d17d718c30
+	github.com/open-cluster-management/multicloud-operators-placementrule v1.0.1-2020-05-28-18-29-00.0.20200603172904-efde26079087
 	github.com/open-cluster-management/multicloud-operators-subscription v0.0.0-20200427133526-eb3986b41290
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/prometheus/common v0.9.1
@@ -15,7 +16,7 @@ require (
 	k8s.io/api v0.18.2
 	k8s.io/apiextensions-apiserver v0.18.2
 	k8s.io/apimachinery v0.18.2
-	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/client-go v13.0.0+incompatible
 	k8s.io/cluster-registry v0.0.6
 	k8s.io/klog v1.0.0
 	sigs.k8s.io/controller-runtime v0.6.0

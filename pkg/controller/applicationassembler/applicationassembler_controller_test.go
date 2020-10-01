@@ -27,12 +27,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
-
+	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 	prulev1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
 )
@@ -136,12 +137,22 @@ func TestReconcile(t *testing.T) {
 	// create the deployable object
 	dpl := deployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dpl)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dpl)
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and HybridDeployable to be created
 	instance := applicationAssembler.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		if err = c.Delete(context.TODO(), instance); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 }
 
@@ -171,30 +182,49 @@ func TestReconcile_WithDeployable_ApplicationAndHybridDeployableAndPlacementRule
 
 	dplybl := deployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dplybl)).NotTo(HaveOccurred())
-	defer c.Delete(context.Background(), dplybl)
+	defer func() {
+		if err = c.Delete(context.Background(), dplybl); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssembler.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		if err = c.Delete(context.TODO(), instance); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	appKey := types.NamespacedName{Name: applicationAssemblerKey.Name, Namespace: applicationAssemblerKey.Namespace}
 	app := &sigappv1beta1.Application{}
 	g.Expect(c.Get(context.TODO(), appKey, app)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), app)
 
 	hybrddplyblKey := types.NamespacedName{Name: deployableKey.Namespace + "-configmap-" + payload.Namespace + "-" +
 		payload.Name, Namespace: applicationAssemblerKey.Namespace}
 	hybrddplybl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), hybrddplyblKey, hybrddplybl)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), hybrddplybl)
+	defer func() {
+		if err = c.Delete(context.TODO(), hybrddplybl); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	pruleKey := types.NamespacedName{Name: deployableKey.Namespace + "-configmap-" + payload.Namespace + "-" +
 		payload.Name, Namespace: applicationAssemblerKey.Namespace}
-	prule := &prulev1.PlacementRule{}
+	prule := &prulev1alpha1.PlacementRule{}
 	g.Expect(c.Get(context.TODO(), pruleKey, prule)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), prule)
+	defer func() {
+		if err = c.Delete(context.TODO(), prule); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 }
 
 func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployableCreated(t *testing.T) {
@@ -241,22 +271,36 @@ func TestReconcile_WithDeployableAndPlacementRule_ApplicationAndHybridDeployable
 
 	prule := placementRule.DeepCopy()
 	g.Expect(c.Create(context.TODO(), prule)).NotTo(HaveOccurred())
-	defer c.Delete(context.Background(), prule)
+	defer func() {
+		if err = c.Delete(context.Background(), prule); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	dplybl := deployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dplybl)).NotTo(HaveOccurred())
-	defer c.Delete(context.Background(), dplybl)
+	defer func() {
+		if err = c.Delete(context.Background(), dplybl); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssembler.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		if err = c.Delete(context.TODO(), instance); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	appKey := types.NamespacedName{Name: applicationAssemblerKey.Name, Namespace: applicationAssemblerKey.Namespace}
 	app := &sigappv1beta1.Application{}
 	g.Expect(c.Get(context.TODO(), appKey, app)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), app)
 
 	hybrddplyblKey := types.NamespacedName{Name: deployableKey.Namespace + "-configmap-" + payload.Namespace + "-" +
 		payload.Name, Namespace: applicationAssemblerKey.Namespace}
@@ -292,13 +336,13 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 
 	deployerType := "configmap"
 
-	deployer := &hdplv1alpha1.Deployer{
+	deployer := &prulev1alpha1.Deployer{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deployerKey.Name,
 			Namespace: deployerKey.Namespace,
 			Labels:    map[string]string{"deployer-type": deployerType},
 		},
-		Spec: hdplv1alpha1.DeployerSpec{
+		Spec: prulev1alpha1.DeployerSpec{
 			Type: deployerType,
 		},
 	}
@@ -308,16 +352,16 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 		Namespace: "default",
 	}
 
-	deployerSet := &hdplv1alpha1.DeployerSet{
+	deployerSet := &prulev1alpha1.DeployerSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      clusterName,
 			Namespace: deployerSetKey.Namespace,
 		},
-		Spec: hdplv1alpha1.DeployerSetSpec{
-			Deployers: []hdplv1alpha1.DeployerSpecDescriptor{
+		Spec: prulev1alpha1.DeployerSetSpec{
+			Deployers: []prulev1alpha1.DeployerSpecDescriptor{
 				{
 					Key: clusterName + "/" + deployer.GetName(),
-					Spec: hdplv1alpha1.DeployerSpec{
+					Spec: prulev1alpha1.DeployerSpec{
 						Type: deployerType,
 					},
 				},
@@ -361,16 +405,31 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 
 	prule := placementRule.DeepCopy()
 	g.Expect(c.Create(context.TODO(), prule)).NotTo(HaveOccurred())
-	defer c.Delete(context.Background(), prule)
+	defer func() {
+		if err = c.Delete(context.Background(), prule); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	dplybl := deployable.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dplybl)).NotTo(HaveOccurred())
-	defer c.Delete(context.Background(), dplybl)
+	defer func() {
+		if err = c.Delete(context.Background(), dplybl); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	fooInstance := applicationAssembler.DeepCopy()
 	g.Expect(c.Create(context.TODO(), fooInstance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), fooInstance)
+	defer func() {
+		if err = c.Delete(context.TODO(), fooInstance); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	hybrddplyblKey := types.NamespacedName{Name: deployableKey.Namespace + "-configmap-" + payload.Namespace + "-" +
@@ -380,11 +439,21 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 
 	dplyr := deployer.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dplyr)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dplyr)
+	defer func() {
+		if err = c.Delete(context.TODO(), dplyr); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	dset := deployerSet.DeepCopy()
 	g.Expect(c.Create(context.TODO(), dset)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), dset)
+	defer func() {
+		if err = c.Delete(context.TODO(), dset); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	barApplicationAssembler.Spec = toolsv1alpha1.ApplicationAssemblerSpec{
 		HubComponents: []*corev1.ObjectReference{
@@ -401,11 +470,15 @@ func TestReconcile_WithHybridDeployableAndPlacementRule_ApplicationAndHybridDepl
 
 	barInstance := barApplicationAssembler.DeepCopy()
 	g.Expect(c.Create(context.TODO(), barInstance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), barInstance)
+	defer func() {
+		if err = c.Delete(context.TODO(), barInstance); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	barAppKey := types.NamespacedName{Name: barApplicationAssemblerKey.Name, Namespace: barApplicationAssemblerKey.Namespace}
 	barApp := &sigappv1beta1.Application{}
 	g.Expect(c.Get(context.TODO(), barAppKey, barApp)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), barApp)
 }

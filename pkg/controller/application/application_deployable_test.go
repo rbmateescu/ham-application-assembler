@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -57,11 +58,21 @@ func TestApplicationDeployable(t *testing.T) {
 	// Stand up the infrastructure
 	cl1 := mc1.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), cl1)
+	defer func() {
+		if err = c.Delete(context.TODO(), cl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	cl2 := mc2.DeepCopy()
 	g.Expect(c.Create(context.TODO(), cl2)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), cl2)
+	defer func() {
+		if err = c.Delete(context.TODO(), cl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the Application object and expect the Reconcile and Deployable to be created
 	app := application.DeepCopy()
@@ -78,7 +89,12 @@ func TestApplicationDeployable(t *testing.T) {
 	}
 
 	// app cleanup should also delete the app deployables
-	c.Delete(context.TODO(), app)
+
+	if err = c.Delete(context.TODO(), app); err != nil {
+		klog.Error(err)
+		t.Fail()
+	}
+
 	// wait for reconcile to finish
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 

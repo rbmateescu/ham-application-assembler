@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -112,7 +113,12 @@ func TestCreateDeployables(t *testing.T) {
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssembler.DeepCopy()
 	g.Expect(c.Create(context.TODO(), instance)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		if err = c.Delete(context.TODO(), instance); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	hybrddplyblKey := types.NamespacedName{Name: mc.Name + "-service-" + mcService.Namespace + "-" + mcService.Name, Namespace: applicationAssemblerKey.Namespace}

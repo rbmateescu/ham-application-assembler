@@ -18,6 +18,9 @@ import (
 	"context"
 	"strings"
 
+	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
+	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
+	subv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -28,9 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
-	subv1 "github.com/open-cluster-management/multicloud-operators-subscription/pkg/apis/apps/v1"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
@@ -178,7 +178,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 	return nil
 }
 
-func (r *ReconcileApplicationAssembler) selectDeployer(deployers []hdplv1alpha1.Deployer, ucobj *unstructured.Unstructured) (*hdplv1alpha1.Deployer, error) {
+func (r *ReconcileApplicationAssembler) selectDeployer(deployers []prulev1alpha1.Deployer, ucobj *unstructured.Unstructured) (*prulev1alpha1.Deployer, error) {
 	gvr, ok := utils.GVKGVRMap[ucobj.GetObjectKind().GroupVersionKind()]
 	if !ok {
 		klog.Error("Failed to find GVR for object:", ucobj.GetObjectKind().GroupVersionKind())
@@ -217,9 +217,9 @@ func (r *ReconcileApplicationAssembler) selectDeployer(deployers []hdplv1alpha1.
 }
 
 func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *unstructured.Unstructured) (*hdplv1alpha1.HybridTemplate,
-	*hdplv1alpha1.Deployer, error) {
+	*prulev1alpha1.Deployer, error) {
 
-	deployerlist := &hdplv1alpha1.DeployerList{}
+	deployerlist := &prulev1alpha1.DeployerList{}
 	if err := r.List(context.TODO(), deployerlist, &client.ListOptions{}); err != nil {
 		klog.Error("Failed to list deployers")
 		return nil, nil, err
@@ -230,7 +230,7 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 		return nil, nil, err
 	}
 	if deployer == nil {
-		deployer = &hdplv1alpha1.Deployer{}
+		deployer = &prulev1alpha1.Deployer{}
 		deployer.Spec.Type = toolsv1alpha1.DefaultDeployerType
 		deployer.Namespace = ucobj.GetNamespace()
 	}
@@ -239,8 +239,8 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 	htpl.DeployerType = deployer.Spec.Type
 
 	annotations := ucobj.GetAnnotations()
-	if annotations != nil && annotations[hdplv1alpha1.DeployerType] != "" {
-		htpl.DeployerType = annotations[hdplv1alpha1.DeployerType]
+	if annotations != nil && annotations[prulev1alpha1.DeployerType] != "" {
+		htpl.DeployerType = annotations[prulev1alpha1.DeployerType]
 	}
 
 	htpl.Template = &runtime.RawExtension{}

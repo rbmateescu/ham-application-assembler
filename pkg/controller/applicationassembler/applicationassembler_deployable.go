@@ -17,17 +17,14 @@ package applicationassembler
 import (
 	"context"
 	"encoding/json"
-	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
-	prulev1 "github.com/open-cluster-management/multicloud-operators-placementrule/pkg/apis/apps/v1"
 
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 
@@ -121,7 +118,7 @@ func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1
 
 	hdpl.Spec.HybridTemplates = htpls
 
-	err := r.genPlacementRuleForHybridDeployable(hdpl, dpl.Namespace)
+	err := r.genPlacementRuleForHybridDeployable(hdpl, nil)
 	if err != nil {
 		klog.Error("Failed to generate placementrule for hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
 		return err
@@ -143,50 +140,50 @@ func (r *ReconcileApplicationAssembler) buildHybridDeployable(hdpl *hdplv1alpha1
 
 }
 
-func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl *hdplv1alpha1.Deployable, clusterNamespace string) error {
+// func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl *hdplv1alpha1.Deployable, clusterNamespace string) error {
 
-	key := types.NamespacedName{Namespace: hdpl.Namespace, Name: hdpl.Name}
+// 	key := types.NamespacedName{Namespace: hdpl.Namespace, Name: hdpl.Name}
 
-	prule := &prulev1.PlacementRule{}
-	prule.Spec.Clusters = []prulev1.GenericClusterReference{
-		{
-			Name: clusterNamespace,
-		},
-	}
-	prule.Status.Decisions = []prulev1.PlacementDecision{
-		{
-			ClusterName:      clusterNamespace,
-			ClusterNamespace: clusterNamespace,
-		},
-	}
-	hdpl.Spec.Placement = &hdplv1alpha1.HybridPlacement{}
+// 	prule := &prulev1.PlacementRule{}
+// 	prule.Spec.Clusters = []prulev1.GenericClusterReference{
+// 		{
+// 			Name: clusterNamespace,
+// 		},
+// 	}
+// 	prule.Status.Decisions = []prulev1.PlacementDecision{
+// 		{
+// 			ClusterName:      clusterNamespace,
+// 			ClusterNamespace: clusterNamespace,
+// 		},
+// 	}
+// 	hdpl.Spec.Placement = &hdplv1alpha1.HybridPlacement{}
 
-	pruleList := &prulev1.PlacementRuleList{}
-	err := r.List(context.TODO(), pruleList, &client.ListOptions{Namespace: hdpl.Namespace})
-	if err != nil {
-		klog.Error("Failed to retrieve the list of placement rules for hybrid deployable ", key.String())
-		return err
-	}
-	for _, placementRule := range pruleList.Items {
-		if reflect.DeepEqual(placementRule.Spec, prule.Spec) && reflect.DeepEqual(placementRule.Status, prule.Status) {
-			hdpl.Spec.Placement.PlacementRef = &corev1.ObjectReference{Name: placementRule.Name}
-			return nil
-		}
-	}
+// 	pruleList := &prulev1.PlacementRuleList{}
+// 	err := r.List(context.TODO(), pruleList, &client.ListOptions{Namespace: hdpl.Namespace})
+// 	if err != nil {
+// 		klog.Error("Failed to retrieve the list of placement rules for hybrid deployable ", key.String())
+// 		return err
+// 	}
+// 	for _, placementRule := range pruleList.Items {
+// 		if reflect.DeepEqual(placementRule.Spec, prule.Spec) && reflect.DeepEqual(placementRule.Status, prule.Status) {
+// 			hdpl.Spec.Placement.PlacementRef = &corev1.ObjectReference{Name: placementRule.Name}
+// 			return nil
+// 		}
+// 	}
 
-	prule.Name = key.Name
-	prule.Namespace = key.Namespace
+// 	prule.Name = key.Name
+// 	prule.Namespace = key.Namespace
 
-	if err = r.Create(context.TODO(), prule); err != nil {
-		klog.Error("Failed to create placement rule for hybrid deployable ", key.String())
-		return err
+// 	if err = r.Create(context.TODO(), prule); err != nil {
+// 		klog.Error("Failed to create placement rule for hybrid deployable ", key.String())
+// 		return err
 
-	}
-	if err = r.Status().Update(context.TODO(), prule); err != nil {
-		klog.Error("Failed to update placement rule status for hybrid deployable ", key.String(), " with error ", err)
-	}
+// 	}
+// 	if err = r.Status().Update(context.TODO(), prule); err != nil {
+// 		klog.Error("Failed to update placement rule status for hybrid deployable ", key.String(), " with error ", err)
+// 	}
 
-	hdpl.Spec.Placement.PlacementRef = &corev1.ObjectReference{Name: prule.Name}
+// 	hdpl.Spec.Placement.PlacementRef = &corev1.ObjectReference{Name: prule.Name}
 
-	return nil
-}
+// 	return nil
+// }

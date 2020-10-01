@@ -34,7 +34,7 @@ import (
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	"github.com/hybridapp-io/ham-application-assembler/pkg/utils"
 	hdplv1alpha1 "github.com/hybridapp-io/ham-deployable-operator/pkg/apis/core/v1alpha1"
-
+	prulev1alpha1 "github.com/hybridapp-io/ham-placement/pkg/apis/core/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 )
 
@@ -150,16 +150,16 @@ var (
 		},
 	}
 
-	fooDeployer = &hdplv1alpha1.Deployer{
+	fooDeployer = &prulev1alpha1.Deployer{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Deployer",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "foo",
 			Namespace:   "default",
-			Annotations: map[string]string{hdplv1alpha1.DeployerInCluster: "true"},
+			Annotations: map[string]string{prulev1alpha1.DeployerInCluster: "true"},
 		},
-		Spec: hdplv1alpha1.DeployerSpec{
+		Spec: prulev1alpha1.DeployerSpec{
 			Type:  "foo",
 			Scope: apiextensions.ClusterScoped,
 		},
