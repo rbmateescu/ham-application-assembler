@@ -81,7 +81,6 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 
 	labels[toolsv1alpha1.LabelApplicationPrefix+appID] = appID
 	hdpl.SetLabels(labels)
-
 	newtpl, deployer, err := r.generateHybridTemplateFromObject(ucobj)
 	if err != nil {
 		klog.Error("Failed to generate hybrid template from object with error:", err)
@@ -97,13 +96,11 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObject(insta
 	}
 
 	hdpl.Spec.HybridTemplates = htpls
-	deployerref := corev1.ObjectReference{
-		Name:      deployer.Name,
-		Namespace: deployer.Namespace,
+	err = r.genPlacementRuleForHybridDeployable(hdpl, &deployer.Spec.Type)
+	if err != nil {
+		klog.Error("Failed to generate placementrule for hybrid deployable ", hdpl.Namespace+"/"+hdpl.Name)
+		return err
 	}
-	hdpl.Spec.Placement = &hdplv1alpha1.HybridPlacement{}
-	hdpl.Spec.Placement.Deployers = []corev1.ObjectReference{deployerref}
-
 	err = r.patchObject(hdpl, ucobj)
 	if err != nil {
 		klog.Error("Failed to patch object with error: ", err)
@@ -140,7 +137,7 @@ func (r *ReconcileApplicationAssembler) generateHybridDeployableFromObjectInMana
 			klog.Error("Failed to retrieve hybrid deployable ", hdplKey.String())
 			return err
 		}
-		hdpl.Name = hdplKey.Name
+		hdpl.Name = r.genHybridDeployableName(instance, obj, cluster)
 		hdpl.Namespace = hdplKey.Namespace
 
 		dpl := &dplv1.Deployable{}
@@ -232,6 +229,7 @@ func (r *ReconcileApplicationAssembler) generateHybridTemplateFromObject(ucobj *
 	if deployer == nil {
 		deployer = &prulev1alpha1.Deployer{}
 		deployer.Spec.Type = toolsv1alpha1.DefaultDeployerType
+		deployer.Name = toolsv1alpha1.DefaultDeployerType
 		deployer.Namespace = ucobj.GetNamespace()
 	}
 
