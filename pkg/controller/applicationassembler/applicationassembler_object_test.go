@@ -315,19 +315,17 @@ func TestHubComponentsPlacementBySingleDeployer(t *testing.T) {
 	svcHdplKey := types.NamespacedName{Name: "service-" + service.Namespace + "-" + service.Name, Namespace: applicationAssemblerKey.Namespace}
 	svcHdpl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), svcHdplKey, svcHdpl)).NotTo(HaveOccurred())
-	g.Expect(svcHdpl.Spec.Placement.Deployers).To(HaveLen(1))
-	g.Expect(svcHdpl.Spec.Placement.Deployers[0].Name).To(Equal(deployer.Name))
+	g.Expect(svcHdpl.Spec.Placement.PlacementRef).NotTo(BeNil())
 	defer c.Delete(context.TODO(), svcHdpl)
 
 	stsHdplKey := types.NamespacedName{Name: "statefulset-" + sts.Namespace + "-" + sts.Name, Namespace: applicationAssemblerKey.Namespace}
 	stsHdpl := &hdplv1alpha1.Deployable{}
 	g.Expect(c.Get(context.TODO(), stsHdplKey, stsHdpl)).NotTo(HaveOccurred())
 
-	g.Expect(svcHdpl.Spec.HybridTemplates).To(HaveLen(1))
-	g.Expect(svcHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(fooDeployer.Spec.Type))
+	g.Expect(stsHdpl.Spec.HybridTemplates).To(HaveLen(1))
+	g.Expect(stsHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(fooDeployer.Spec.Type))
 
-	g.Expect(svcHdpl.Spec.Placement.Deployers).To(HaveLen(1))
-	g.Expect(svcHdpl.Spec.Placement.Deployers[0].Name).To(Equal(deployer.Name))
+	g.Expect(stsHdpl.Spec.Placement.PlacementRef).NotTo(BeNil())
 	defer c.Delete(context.TODO(), stsHdpl)
 
 }
@@ -400,8 +398,7 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 	g.Expect(svcHdpl.Spec.HybridTemplates).To(HaveLen(1))
 	g.Expect(svcHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(svcDeployer.Spec.Type))
 
-	g.Expect(svcHdpl.Spec.Placement.Deployers).To(HaveLen(1))
-	g.Expect(svcHdpl.Spec.Placement.Deployers[0].Name).To(Equal(svcDeployer.Name))
+	g.Expect(svcHdpl.Spec.Placement.PlacementRef).NotTo(BeNil())
 	defer c.Delete(context.TODO(), svcHdpl)
 
 	stsHdplKey := types.NamespacedName{Name: "statefulset-" + sts.Namespace + "-" + sts.Name, Namespace: applicationAssemblerKey.Namespace}
@@ -411,8 +408,7 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 	g.Expect(stsHdpl.Spec.HybridTemplates).To(HaveLen(1))
 	g.Expect(stsHdpl.Spec.HybridTemplates[0].DeployerType).To(Equal(stsDeployer.Spec.Type))
 
-	g.Expect(stsHdpl.Spec.Placement.Deployers).To(HaveLen(1))
-	g.Expect(stsHdpl.Spec.Placement.Deployers[0].Name).To(Equal(stsDeployer.Name))
+	g.Expect(stsHdpl.Spec.Placement.PlacementRef).NotTo(BeNil())
 	defer c.Delete(context.TODO(), stsHdpl)
 
 }

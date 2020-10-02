@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/hybridapp-io/ham-deployable-operator v0.0.0-20201001171709-09fe74f37526
-	github.com/hybridapp-io/ham-placement v0.0.0-20200930154109-0cc75e4d1c3e
+	github.com/hybridapp-io/ham-placement v0.0.0-20201002162209-bb77dfed1559
 	github.com/kubernetes-sigs/application v0.8.1
 	github.com/onsi/gomega v1.9.0
 	github.com/open-cluster-management/multicloud-operators-deployable v0.0.0-20200721140654-267157672e39
