@@ -43,7 +43,7 @@ func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl
 		return err
 	}
 	for _, placementRule := range pruleList.Items {
-		if reflect.DeepEqual(placementRule.Spec, prule.Spec) && reflect.DeepEqual(placementRule.Status, prule.Status) {
+		if reflect.DeepEqual(placementRule.Spec, prule.Spec) {
 			hdpl.Spec.Placement.PlacementRef = &corev1.ObjectReference{Name: placementRule.Name}
 			return nil
 		}
