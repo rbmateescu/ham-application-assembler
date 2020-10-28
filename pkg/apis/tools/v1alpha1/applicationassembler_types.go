@@ -42,6 +42,14 @@ var (
 		Version: dplv1.SchemeGroupVersion.Version,
 		Kind:    "Deployable",
 	}
+
+	// ClustersIgnoredForDiscovery represents an array of clusters which will not be included in the discovery flow
+	ClustersIgnoredForDiscovery = []corev1.ObjectReference{
+		{
+			Name:      LocalClusterName,
+			Namespace: LocalClusterName,
+		},
+	}
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -58,6 +66,9 @@ const (
 
 	// GeneratedDeployableNameLength is the max length of a generated name for a deployable.
 	GeneratedDeployableNameLength = 63
+
+	// LocalClusterName is the name of the local cluster representation on hub
+	LocalClusterName = "local-cluster"
 )
 
 // ClusterComponent defines a list of components for a managed cluster identified by its namespace

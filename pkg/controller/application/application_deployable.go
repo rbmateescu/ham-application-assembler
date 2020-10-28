@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 
+	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -31,7 +32,7 @@ import (
 	dplv1 "github.com/open-cluster-management/multicloud-operators-deployable/pkg/apis/apps/v1"
 )
 
-// Locates a deployable wrapping an application in a mnaged cluster nanespace
+// Locates a deployable wrapping an application in a managed cluster namespace
 func (r *ReconcileApplication) locateAppDeployable(appKey types.NamespacedName, namespace string) (*dplv1.Deployable, error) {
 	dpllist := &dplv1.DeployableList{}
 
@@ -78,10 +79,20 @@ func (r *ReconcileApplication) reconcileAppDeployables(app *sigappv1beta1.Applic
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		err = r.reconcileAppDeployable(app, cluster.Namespace)
-		if err != nil {
-			klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Namespace)
-			return err
+		ignored := false
+		for _, clObjRef := range toolsv1alpha1.ClustersIgnoredForDiscovery {
+			if clObjRef.Name == cluster.Name && clObjRef.Namespace == cluster.Namespace {
+				ignored = true
+				break
+			}
+		}
+		// process only clusters which are not in the ignored list
+		if !ignored {
+			err = r.reconcileAppDeployable(app, cluster.Namespace)
+			if err != nil {
+				klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Namespace)
+				return err
+			}
 		}
 	}
 

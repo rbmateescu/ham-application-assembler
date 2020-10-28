@@ -102,3 +102,88 @@ func TestApplicationDeployable(t *testing.T) {
 	g.Expect(c.List(context.TODO(), newList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
 	g.Expect(newList.Items).To(HaveLen(0))
 }
+
+func TestApplicationDeployableIgnoredClusters(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Stand up the infrastructure
+	cl1 := mc1.DeepCopy()
+	g.Expect(c.Create(context.TODO(), cl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), cl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	cl2 := mc2.DeepCopy()
+	g.Expect(c.Create(context.TODO(), cl2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), cl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	localCluster := localCluster.DeepCopy()
+	g.Expect(c.Create(context.TODO(), localCluster)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), localCluster); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// Create the Application object and expect the Reconcile and Deployable to be created
+	app := application.DeepCopy()
+	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
+	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	dplList := &dplv1.DeployableList{}
+	g.Expect(c.List(context.TODO(), dplList, &client.ListOptions{})).NotTo(HaveOccurred())
+
+	// ensure local-cluster is not generating any app deployable
+	g.Expect(dplList.Items).To(HaveLen(2))
+
+	for _, dpl := range dplList.Items {
+		g.Expect(dpl.Namespace).To(BeElementOf([]string{mc1Name, mc2Name}))
+	}
+
+	// app cleanup should also delete the app deployables
+
+	if err = c.Delete(context.TODO(), app); err != nil {
+		klog.Error(err)
+		t.Fail()
+	}
+
+	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	newList := &dplv1.DeployableList{}
+	g.Expect(c.List(context.TODO(), newList, &client.ListOptions{LabelSelector: labels.Set(selectorLabels).AsSelector()})).NotTo(HaveOccurred())
+	g.Expect(newList.Items).To(HaveLen(0))
+}

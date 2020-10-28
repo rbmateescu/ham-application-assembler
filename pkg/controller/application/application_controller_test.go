@@ -61,6 +61,13 @@ var (
 		},
 	}
 
+	localClusterName = "local-cluster"
+	localClusterNS   = corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: localClusterName,
+		},
+	}
+
 	mc1ServiceName = "mysql-svc-mc1"
 	mc2ServiceName = "webserver-svc-mc2"
 
@@ -141,6 +148,13 @@ var (
 		},
 	}
 
+	localCluster = &clusterv1alpha1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      localClusterName,
+			Namespace: localClusterName,
+		},
+	}
+
 	// application
 	applicationKey = types.NamespacedName{
 		Name:      "wordpress",
@@ -207,6 +221,9 @@ func TestReconcile(t *testing.T) {
 
 	ns2 := mc2NS.DeepCopy()
 	g.Expect(c.Create(context.TODO(), ns2)).To(Succeed())
+
+	localClusterNS := localClusterNS.DeepCopy()
+	g.Expect(c.Create(context.TODO(), localClusterNS)).To(Succeed())
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	app := application.DeepCopy()
