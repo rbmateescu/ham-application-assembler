@@ -95,31 +95,31 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 			Kind:  gk.Kind,
 		})
 		if err != nil {
-			klog.Error("No mapping found for GK ", gk)
-			return nil, err
-		}
+			klog.Info("No mapping found for GK ", gk, " Skipping this local group/kind")
 
-		list := &unstructured.UnstructuredList{}
-		list.SetGroupVersionKind(mapping.GroupVersionKind)
+		} else {
+			list := &unstructured.UnstructuredList{}
+			list.SetGroupVersionKind(mapping.GroupVersionKind)
 
-		if list, err = r.dynamicClient.Resource(mapping.Resource).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).String(),
-		}); err != nil {
-			klog.Error("Failed to retrieve the list of resources for GK ", gk)
-			return nil, err
-		}
-
-		for _, u := range list.Items {
-			resource := u
-			// ignore the resource if it belongs to another hub, this helps the all-in-one poc scenario
-			ra := resource.GetAnnotations()
-			if ra != nil {
-				if _, ok := ra[dplv1.AnnotationHosting]; ok {
-					continue
-				}
+			if list, err = r.dynamicClient.Resource(mapping.Resource).List(context.TODO(), metav1.ListOptions{
+				LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).String(),
+			}); err != nil {
+				klog.Error("Failed to retrieve the list of resources for GK ", gk)
+				return nil, err
 			}
 
-			resources = append(resources, &resource)
+			for _, u := range list.Items {
+				resource := u
+				// ignore the resource if it belongs to another hub, this helps the all-in-one poc scenario
+				ra := resource.GetAnnotations()
+				if ra != nil {
+					if _, ok := ra[dplv1.AnnotationHosting]; ok {
+						continue
+					}
+				}
+
+				resources = append(resources, &resource)
+			}
 		}
 
 		// remote components wrapped by deployables if discovery annotation is enabled
