@@ -29,7 +29,7 @@ import (
 	toolsv1alpha1 "github.com/hybridapp-io/ham-application-assembler/pkg/apis/tools/v1alpha1"
 )
 
-func TestDiscoveredComponents(t *testing.T) {
+func TestDiscoveredComponentsWithLabelSelector(t *testing.T) {
 	g := NewWithT(t)
 
 	var c client.Client
@@ -107,4 +107,196 @@ func TestDiscoveredComponents(t *testing.T) {
 	for _, comp := range app.Status.ComponentList.Objects {
 		g.Expect(comp).To(BeElementOf(components))
 	}
+}
+
+func TestDiscoveredComponentsWithNoSelector(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	dpl1 := mc1ServiceDeployable.DeepCopy()
+	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	dpl2 := mc2ServiceDeployable.DeepCopy()
+	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.Background(), dpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// Create the Application object and expect the deployables
+	app := application.DeepCopy()
+	app.Spec.Selector = nil
+	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	// the two services should now be in the app status
+	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
+	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(0))
+}
+
+func TestDiscoveredComponentsWithNoLabelSelector(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	dpl1 := mc1ServiceDeployable.DeepCopy()
+	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	dpl2 := mc2ServiceDeployable.DeepCopy()
+	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.Background(), dpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// Create the Application object and expect the deployables
+	app := application.DeepCopy()
+	app.Spec.Selector.MatchLabels = nil
+	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	// the two services should now be in the app status
+	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
+	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(0))
+}
+
+func TestDiscoveredComponentsWithEmptyLabelSelector(t *testing.T) {
+	g := NewWithT(t)
+
+	var c client.Client
+
+	var expectedRequest = reconcile.Request{NamespacedName: applicationKey}
+
+	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
+	// channel when it is finished.
+	mgr, err := manager.New(cfg, manager.Options{MetricsBindAddress: "0"})
+	g.Expect(err).NotTo(HaveOccurred())
+
+	c = mgr.GetClient()
+
+	rec := newReconciler(mgr)
+	recFn, requests := SetupTestReconcile(rec)
+
+	g.Expect(add(mgr, recFn)).NotTo(HaveOccurred())
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
+
+	// Stand up the infrastructure: managed cluster namespaces, deployables in mc namespaces
+	dpl1 := mc1ServiceDeployable.DeepCopy()
+	g.Expect(c.Create(context.TODO(), dpl1)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), dpl1); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	dpl2 := mc2ServiceDeployable.DeepCopy()
+	g.Expect(c.Create(context.Background(), dpl2)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.Background(), dpl2); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
+	// Create the Application object and expect the deployables
+	app := application.DeepCopy()
+	// empty label selector
+	app.Spec.Selector.MatchLabels = make(map[string]string)
+	g.Expect(c.Create(context.TODO(), app)).NotTo(HaveOccurred())
+	defer func() {
+		if err = c.Delete(context.TODO(), app); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+	// wait for reconcile to finish
+	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
+
+	// the two services should now be in the app status
+	g.Expect(c.Get(context.TODO(), applicationKey, app)).NotTo(HaveOccurred())
+
+	// label selector is provided but empty, reconcile will make it nil, so no components
+	g.Expect(app.Status.ComponentList.Objects).To(HaveLen(0))
 }

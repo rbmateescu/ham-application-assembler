@@ -100,12 +100,16 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 		} else {
 			list := &unstructured.UnstructuredList{}
 			list.SetGroupVersionKind(mapping.GroupVersionKind)
-
-			if list, err = r.dynamicClient.Resource(mapping.Resource).List(context.TODO(), metav1.ListOptions{
-				LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).String(),
-			}); err != nil {
-				klog.Error("Failed to retrieve the list of resources for GK ", gk)
-				return nil, err
+			// if selector is not provided, no components will be fetched
+			if app.Spec.Selector != nil {
+				if app.Spec.Selector.MatchLabels != nil {
+					if list, err = r.dynamicClient.Resource(mapping.Resource).List(context.TODO(), metav1.ListOptions{
+						LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).String(),
+					}); err != nil {
+						klog.Error("Failed to retrieve the list of resources for GK ", gk)
+						return nil, err
+					}
+				}
 			}
 
 			for _, u := range list.Items {
@@ -125,10 +129,16 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 		// remote components wrapped by deployables if discovery annotation is enabled
 		if r.isAppDiscoveryEnabled(app) {
 			dplList := &dplv1.DeployableList{}
-			err = r.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).AsSelector()})
-			if err != nil {
-				klog.Error("Failed to retrieve the list of deployables for GK ", gk)
-				return nil, err
+
+			// if selector is not provided, no components will be fetched
+			if app.Spec.Selector != nil {
+				if app.Spec.Selector.MatchLabels != nil {
+					err = r.List(context.TODO(), dplList, &client.ListOptions{LabelSelector: labels.Set(app.Spec.Selector.MatchLabels).AsSelector()})
+					if err != nil {
+						klog.Error("Failed to retrieve the list of deployables for GK ", gk)
+						return nil, err
+					}
+				}
 			}
 			for i := range dplList.Items {
 				dpl := dplList.Items[i]
@@ -138,8 +148,9 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 					klog.Info("Failed to unmarshal object with error", err)
 					return nil, err
 				}
+				if (mapping != nil && dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping)) ||
+					(mapping == nil && dplTemplate.GetKind() == gk.Kind && utils.StripVersion(dplTemplate.GetAPIVersion()) == gk.Group) {
 
-				if dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping) {
 					ucMap, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&dpl)
 					ucObj := &unstructured.Unstructured{}
 					ucObj.SetUnstructuredContent(ucMap)
