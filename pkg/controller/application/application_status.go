@@ -148,8 +148,9 @@ func (r *ReconcileApplication) fetchApplicationComponents(app *sigappv1beta1.App
 					klog.Info("Failed to unmarshal object with error", err)
 					return nil, err
 				}
+				if (mapping != nil && dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping)) ||
+					(mapping == nil && dplTemplate.GetKind() == gk.Kind && utils.StripVersion(dplTemplate.GetAPIVersion()) == gk.Group) {
 
-				if dplTemplate.GetKind() == gk.Kind && dplTemplate.GetAPIVersion() == utils.GetAPIVersion(mapping) {
 					ucMap, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&dpl)
 					ucObj := &unstructured.Unstructured{}
 					ucObj.SetUnstructuredContent(ucMap)
