@@ -27,6 +27,7 @@ import (
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -248,7 +249,12 @@ func TestHubComponentsAnnotations(t *testing.T) {
 
 	svc := service.DeepCopy()
 	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), svc)
+	defer func() {
+		if err = c.Delete(context.TODO(), svc); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance1 := applicationAssembler1.DeepCopy()
@@ -334,11 +340,21 @@ func TestHubComponentsPlacementBySingleDeployer(t *testing.T) {
 
 	svc := service.DeepCopy()
 	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), svc)
+	defer func() {
+		if err = c.Delete(context.TODO(), svc); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	sts := sts.DeepCopy()
 	g.Expect(c.Create(context.TODO(), sts)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), sts)
+	defer func() {
+		if err = c.Delete(context.TODO(), sts); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	deployer := fooDeployer.DeepCopy()
 	deployer.Spec.Capabilities = []rbacv1.PolicyRule{
@@ -349,7 +365,12 @@ func TestHubComponentsPlacementBySingleDeployer(t *testing.T) {
 		},
 	}
 	g.Expect(c.Create(context.TODO(), deployer)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), deployer)
+	defer func() {
+		if err = c.Delete(context.TODO(), deployer); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssemblerHub.DeepCopy()
@@ -413,11 +434,21 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 
 	svc := service.DeepCopy()
 	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), svc)
+	defer func() {
+		if err = c.Delete(context.TODO(), svc); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	sts := sts.DeepCopy()
 	g.Expect(c.Create(context.TODO(), sts)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), sts)
+	defer func() {
+		if err = c.Delete(context.TODO(), sts); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	stsDeployer := fooDeployer.DeepCopy()
 	stsDeployer.Name = "sts-" + fooDeployer.Name
@@ -429,7 +460,12 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 		},
 	}
 	g.Expect(c.Create(context.TODO(), stsDeployer)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), stsDeployer)
+	defer func() {
+		if err = c.Delete(context.TODO(), stsDeployer); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	svcDeployer := fooDeployer.DeepCopy()
 	svcDeployer.Name = "svc-" + fooDeployer.Name
@@ -441,7 +477,12 @@ func TestHubComponentsPlacementByDualDeployer(t *testing.T) {
 		},
 	}
 	g.Expect(c.Create(context.TODO(), svcDeployer)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), svcDeployer)
+	defer func() {
+		if err = c.Delete(context.TODO(), svcDeployer); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssemblerHub.DeepCopy()
@@ -509,11 +550,21 @@ func TestHubComponentsPlacementByDefaultDeployer(t *testing.T) {
 
 	svc := service.DeepCopy()
 	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), svc)
+	defer func() {
+		if err = c.Delete(context.TODO(), svc); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	sts := sts.DeepCopy()
 	g.Expect(c.Create(context.TODO(), sts)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), sts)
+	defer func() {
+		if err = c.Delete(context.TODO(), sts); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	stsDeployer := fooDeployer.DeepCopy()
 	stsDeployer.Name = "sts-" + fooDeployer.Name
@@ -525,7 +576,12 @@ func TestHubComponentsPlacementByDefaultDeployer(t *testing.T) {
 		},
 	}
 	g.Expect(c.Create(context.TODO(), stsDeployer)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), stsDeployer)
+	defer func() {
+		if err = c.Delete(context.TODO(), stsDeployer); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	svcDeployer := fooDeployer.DeepCopy()
 	svcDeployer.Name = "svc-" + fooDeployer.Name
@@ -537,7 +593,12 @@ func TestHubComponentsPlacementByDefaultDeployer(t *testing.T) {
 		},
 	}
 	g.Expect(c.Create(context.TODO(), svcDeployer)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), svcDeployer)
+	defer func() {
+		if err = c.Delete(context.TODO(), svcDeployer); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance := applicationAssemblerHub.DeepCopy()
@@ -601,7 +662,12 @@ func TestComponentsNameLength(t *testing.T) {
 	svc := service.DeepCopy()
 	svc.Name = newLongName
 	g.Expect(c.Create(context.TODO(), svc)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), svc)
+	defer func() {
+		if err = c.Delete(context.TODO(), svc); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
 
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	instance1 := applicationAssembler1.DeepCopy()
