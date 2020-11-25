@@ -25,6 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -96,7 +97,13 @@ func TestReconcile(t *testing.T) {
 	// Create the ApplicationAssembler object and expect the Reconcile and Deployment to be created
 	testCRD := crd.DeepCopy()
 	g.Expect(c.Create(context.TODO(), testCRD)).NotTo(HaveOccurred())
-	defer c.Delete(context.TODO(), testCRD)
+	defer func() {
+		if err = c.Delete(context.TODO(), testCRD); err != nil {
+			klog.Error(err)
+			t.Fail()
+		}
+	}()
+
 	g.Eventually(requests, timeout).Should(Receive(Equal(expectedRequest)))
 
 	// at this point the GVKGVR map should have been refreshed
@@ -110,5 +117,4 @@ func TestReconcile(t *testing.T) {
 	g.Expect(gvr.Group).To(Equal(group))
 	g.Expect(gvr.Resource).To(Equal(resource))
 	g.Expect(gvr.Version).To(Equal(version))
-
 }
