@@ -446,10 +446,8 @@ func TestRelatedResourcesConfigMap(t *testing.T) {
 	// Update decision of pr
 	hpr1.Status.Decisions = []corev1.ObjectReference{
 		{
-			Namespace:  mc1Name,
-			Kind:       "ManagedCluster",
-			Name:       mc1Name,
-			APIVersion: "cluster.open-cluster-management.io",
+			Kind: "ManagedCluster",
+			Name: mc1Name,
 		},
 	}
 	g.Expect(c.Status().Update(context.TODO(), hpr1)).NotTo(HaveOccurred())

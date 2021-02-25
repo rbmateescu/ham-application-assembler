@@ -99,7 +99,7 @@ func (r *ReconcileApplication) reconcileAppDeployableOnAllTargets(app *sigappv1b
 		if !ignored {
 			err = r.reconcileAppDeployable(app, cluster.Name)
 			if err != nil {
-				klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Namespace)
+				klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Name)
 				return err
 			}
 		}
@@ -124,20 +124,19 @@ func (r *ReconcileApplication) reconcileAppDeployableOnTarget(app *sigappv1beta1
 		return nil
 	}
 	cluster.Name = targetObjectReference.Name
-	cluster.Namespace = targetObjectReference.Namespace
 
 	ignored := false
 	for _, clObjRef := range toolsv1alpha1.ClustersIgnoredForDiscovery {
-		if clObjRef.Name == cluster.Name && clObjRef.Namespace == cluster.Namespace {
+		if clObjRef.Name == cluster.Name {
 			ignored = true
 			break
 		}
 	}
 	// process only clusters which are not in the ignored list
 	if !ignored {
-		err := r.reconcileAppDeployable(app, cluster.Namespace)
+		err := r.reconcileAppDeployable(app, cluster.Name)
 		if err != nil {
-			klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Namespace)
+			klog.Error("Failed to reconcile the application deployable in managed cluster namespace: ", cluster.Name)
 			return err
 		}
 	}
@@ -156,7 +155,7 @@ func (r *ReconcileApplication) deleteApplicationDeployables(appKey types.Namespa
 		return err
 	}
 	for _, cluster := range clusterList.Items {
-		dpl, err := r.locateAppDeployable(appKey, cluster.Namespace)
+		dpl, err := r.locateAppDeployable(appKey, cluster.Name)
 		if err != nil {
 			klog.Error("Failed to locate application deployable with error: ", err)
 			return err

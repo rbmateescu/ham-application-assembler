@@ -44,7 +44,7 @@ func (r *ReconcileApplicationAssembler) genPlacementRuleForHybridDeployable(hdpl
 		}
 		clusterManagedObject := corev1.ObjectReference{
 			Name:       managedCluster.Name,
-			Namespace:  managedCluster.Namespace,
+			Namespace:  managedCluster.Name,
 			APIVersion: managedCluster.APIVersion,
 		}
 		prule.Spec.Targets = make([]corev1.ObjectReference, 1)
