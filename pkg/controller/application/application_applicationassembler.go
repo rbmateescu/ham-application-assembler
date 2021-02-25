@@ -18,9 +18,9 @@ import (
 	"context"
 
 	sigappv1beta1 "github.com/kubernetes-sigs/application/pkg/apis/app/v1beta1"
+	managedclusterv1 "github.com/open-cluster-management/api/cluster/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	clusterv1alpha1 "k8s.io/cluster-registry/pkg/apis/clusterregistry/v1alpha1"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -65,7 +65,7 @@ func (r *ReconcileApplication) buildAssemblerComponents(appasm *toolsv1alpha1.Ap
 		}
 		if or.APIVersion == dplv1.SchemeGroupVersion.String() && or.Kind == toolsv1alpha1.DeployableGVK.Kind {
 			// retrieve the cluster
-			clusters := &clusterv1alpha1.ClusterList{}
+			clusters := &managedclusterv1.ManagedClusterList{}
 			err := r.List(context.TODO(), clusters, &client.ListOptions{Namespace: or.Namespace})
 			if err != nil {
 				klog.Error("Failed to retrieve the list of managed clusters in namespace ", or.Namespace)
